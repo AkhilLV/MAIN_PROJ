@@ -1,0 +1,19 @@
+.test-cases {
+  margin: 1rem 0;
+}
+
+.test-case {
+  display: inline-block;
+  background: crimson;
+  color: #fff;
+  padding: 5px 15px;
+  cursor: pointer;
+  border-radius: 50px;
+  margin-right: 20px;
+  transition: background-color 0.2s;
+}
+
+.test-case:hover {
+  background: rgb(182, 5, 41);
+  color: #fff;
+}
