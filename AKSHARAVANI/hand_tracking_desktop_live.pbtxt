@@ -1,0 +1,18 @@
+input_stream: "input_video"
+output_stream: "output_video"
+
+node {
+  calculator: "HandLandmarkerCpu"
+  input_stream: "IMAGE:input_video"
+  output_stream: "LANDMARKS:hand_landmarks"
+  output_stream: "HANDEDNESS:handedness"
+  node_options: {
+    [type.googleapis.com/mediapipe.HandLandmarkerCpuOptions] {
+      num_hands: 2
+    }
+  }
+}
+
+input_stream_handler {
+  input_stream_handler: "ImmediateInputStreamHandler"
+}

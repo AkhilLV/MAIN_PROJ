@@ -12,6 +12,7 @@ import numpy as np
 import mediapipe as mp
 
 from utils import CvFpsCalc
+
 from model import KeyPointClassifier
 from model import PointHistoryClassifier
 
@@ -70,6 +71,7 @@ def main():
 
     point_history_classifier = PointHistoryClassifier()
 
+
     # Read labels ###########################################################
     with open('model/keypoint_classifier/keypoint_classifier_label.csv',
               encoding='utf-8-sig') as f:
@@ -84,6 +86,8 @@ def main():
         point_history_classifier_labels = [
             row[0] for row in point_history_classifier_labels
         ]
+
+
 
     # FPS Measurement ########################################################
     cvFpsCalc = CvFpsCalc(buffer_len=10)
@@ -135,7 +139,7 @@ def main():
                     landmark_list)
                 pre_processed_point_history_list = pre_process_point_history(
                     debug_image, point_history)
-                # Write to the dataset file
+                # Write to the dataset file: This does nothing in mode 0
                 logging_csv(number, mode, pre_processed_landmark_list,
                             pre_processed_point_history_list)
 
@@ -162,7 +166,7 @@ def main():
 
                 # Drawing part
                 debug_image = draw_bounding_rect(use_brect, debug_image, brect)
-                debug_image = draw_landmarks(debug_image, landmark_list)
+                # debug_image = draw_landmarks(debug_image, landmark_list)
                 debug_image = draw_info_text(
                     debug_image,
                     brect,
