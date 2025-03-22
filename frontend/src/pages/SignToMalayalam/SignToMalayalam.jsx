@@ -1,150 +1,194 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import io from "socket.io-client";
 import "./SignToMalayalam.css";
 
-function SignToMalayalam() {
-  const [isCameraOn, setIsCameraOn] = useState(false);
-  const [translation, setTranslation] = useState("");
+const TIME_BETWEEN_FRAMES = 200;
+
+const SignToMalayalam = () => {
   const videoRef = useRef(null);
-  const streamRef = useRef(null);
-  const frameCaptureRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [socket, setSocket] = useState(null);
+  const [gesture, setGesture] = useState("");
+  const [previousGesture, setPreviousGesture] = useState("");
+  const [gestureText, setGestureText] = useState(""); // Stores text box content
+  const [movement, setMovement] = useState("");
+  const [processedImage, setProcessedImage] = useState("");
+  const [isConnected, setIsConnected] = useState(false);
 
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      streamRef.current = stream;
-      setIsCameraOn(true);
+  useEffect(() => {
+    // Initialize WebSocket connection
+    const newSocket = io("ws://localhost:5000", {
+      transports: ["websocket"],
+      reconnectionAttempts: 5,
+      timeout: 10000,
+    });
 
-      // Start sending frames to backend
-      startFrameCapture();
-    } catch (err) {
-      console.error("Error accessing camera:", err);
-      alert(
-        "Error accessing camera. Please make sure you have granted camera permissions."
-      );
-    }
-  };
+    newSocket.on("connect", () => {
+      setIsConnected(true);
+      console.log("Connected to WebSocket server");
+    });
 
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
-      setIsCameraOn(false);
-    }
-    if (frameCaptureRef.current) {
-      cancelAnimationFrame(frameCaptureRef.current);
-      frameCaptureRef.current = null;
-    }
-  };
+    newSocket.on("processed_frame", (data) => {
+      console.log("Received processed frame:", data);
 
-  const startFrameCapture = () => {
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
+      if (data.frame) setProcessedImage(`data:image/jpeg;base64,${data.frame}`);
 
-    const captureFrame = async () => {
-      if (!isCameraOn || !videoRef.current) return;
+      if (data.gesture) {
+        setGesture(data.gesture);
 
-      try {
-        canvas.width = videoRef.current.videoWidth;
-        canvas.height = videoRef.current.videoHeight;
-        context.drawImage(videoRef.current, 0, 0);
+        // Update text box only if the gesture changes
 
-        // Convert canvas to blob
-        const blob = await new Promise((resolve) =>
-          canvas.toBlob(resolve, "image/jpeg", 0.8)
-        );
-
-        // Send frame to backend
-        const formData = new FormData();
-        formData.append("frame", blob);
-
-        const response = await fetch("http://localhost:5000/process-frame", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setTranslation(data.translation);
+        console.log("curr: ", data.gesture, "prev", previousGesture);
+        if (data.gesture !== previousGesture) {
+          console.log("NEVER RUNS");
+          setGestureText((prevText) => prevText + " " + data.gesture);
+          setPreviousGesture(data.gesture);
         }
-      } catch (err) {
-        console.error("Error processing frame:", err);
       }
 
-      // Request next frame
-      frameCaptureRef.current = requestAnimationFrame(captureFrame);
+      if (data.movement) setMovement(data.movement);
+    });
+
+    newSocket.on("error", (error) => {
+      console.error("WebSocket error:", error);
+    });
+
+    newSocket.on("disconnect", () => {
+      setIsConnected(false);
+      console.log("Disconnected from WebSocket server");
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+      stopWebcam();
+    };
+  }, []);
+
+  useEffect(() => {
+    const setupWebcam = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+          startFrameProcessing();
+        }
+      } catch (error) {
+        console.error("Error accessing webcam:", error);
+      }
     };
 
-    captureFrame();
-  };
-
-  // Handle visibility change
-  useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        stopCamera();
+        stopWebcam();
+      } else if (isConnected) {
+        setupWebcam();
       }
     };
 
+    if (isConnected) {
+      setupWebcam();
+    }
+
     document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
+      stopWebcam();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [isConnected]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      stopCamera();
-    };
-  }, []);
+  const startFrameProcessing = () => {
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    if (!canvas || !video || !socket) return;
+
+    const ctx = canvas.getContext("2d");
+
+    // Limit to 5 FPS (200ms interval)
+    const frameInterval = setInterval(() => {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        // Mirror the image before sending
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Reset transform
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+        const imageData = canvas.toDataURL("image/jpeg").split(",")[1];
+        socket.emit("frame", imageData);
+      }
+    }, TIME_BETWEEN_FRAMES);
+
+    return () => clearInterval(frameInterval);
+  };
+
+  const stopWebcam = () => {
+    if (videoRef.current?.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
+    }
+  };
 
   return (
-    <div className="container">
-      <h1>Sign to Malayalam Translator</h1>
-      <p>
-        Use your camera to translate sign language to Malayalam text in
-        real-time.
-      </p>
+    <div className="sign-to-malayalam-container">
+      <div className="status">
+        Connection Status: {isConnected ? "Connected" : "Disconnected"}
+      </div>
 
-      <div className="camera-section">
-        <div className="camera-container">
+      <div className="feeds-wrapper">
+        <div className="feed-box live-feed">
+          <h3>Live Camera Feed</h3>
           <video
             ref={videoRef}
-            autoPlay
             playsInline
-            className="camera-feed"
-            style={{ display: isCameraOn ? "block" : "none" }}
+            muted
+            autoPlay
+            style={{
+              borderRadius: "8px",
+              transform: "scaleX(-1)", // Mirror the video
+            }}
           />
-          {!isCameraOn && (
-            <div className="camera-placeholder">
-              <p>Camera feed will appear here</p>
-            </div>
-          )}
         </div>
 
-        <div className="translation-container">
-          <h2>Translation Result</h2>
-          <div className="translation-box">
-            {translation || "Your translation will appear here..."}
-          </div>
+        <div className="feed-box">
+          <h3>Processed Output</h3>
+          <canvas ref={canvasRef} style={{ display: "none" }} />
+          {processedImage ? (
+            <div className="processed-frame">
+              <img src={processedImage} alt="Processed Frame" />
+              <div className="overlay-text">
+                {gesture && <div className="gesture">Gesture: {gesture}</div>}
+                {movement && (
+                  <div className="movement">Movement: {movement}</div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="placeholder">Waiting for processed frames...</div>
+          )}
         </div>
       </div>
 
-      <div className="controls">
-        <button
-          className={`camera-button ${isCameraOn ? "stop" : "start"}`}
-          onClick={isCameraOn ? stopCamera : startCamera}
-        >
-          {isCameraOn ? "Stop Camera" : "Start Camera"}
-        </button>
+      <div className="gesture-text-box">
+        <h3>Detected Gestures</h3>
+        <textarea
+          cols={100}
+          rows={100}
+          value={gestureText}
+          readOnly
+          placeholder="Detected gestures will appear here..."
+        />
       </div>
     </div>
   );
-}
+};
 
 export default SignToMalayalam;
