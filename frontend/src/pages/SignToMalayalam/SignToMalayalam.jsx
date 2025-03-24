@@ -36,14 +36,14 @@ const SignToMalayalam = () => {
       if (data.gesture) {
         setGesture(data.gesture);
 
-        // Update text box only if the gesture changes
+        setPreviousGesture((prevGesture) => {
+          if (data.gesture !== prevGesture) {
+            setGestureText((prevText) => prevText + " " + data.gesture);
+            return data.gesture;
+          }
 
-        console.log("curr: ", data.gesture, "prev", previousGesture);
-        if (data.gesture !== previousGesture) {
-          console.log("NEVER RUNS");
-          setGestureText((prevText) => prevText + " " + data.gesture);
-          setPreviousGesture(data.gesture);
-        }
+          return prevGesture;
+        });
       }
 
       if (data.movement) setMovement(data.movement);

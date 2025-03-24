@@ -65,10 +65,21 @@ const Carousel = ({ translations, word }) => {
       <div className="word-display">{word}</div>
       <div className="carousel">
         <div className="carousel-content">
-          <VideoPlayer
-            char={translations[currentIndex].char || null}
-            videoSrc={translations[currentIndex].videoSrc || null}
-          />
+          {translations[currentIndex].mediaSrc.endsWith(".jpg") ? (
+            <div className="  ">
+              <p>{translations[currentIndex].char}</p>
+              <img
+                className="carousal-image"
+                src={translations[currentIndex].mediaSrc}
+                alt={translations[currentIndex].char}
+              />
+            </div>
+          ) : (
+            <VideoPlayer
+              char={translations[currentIndex].char}
+              mediaSrc={translations[currentIndex].mediaSrc}
+            />
+          )}
           <button className="carousel-button prev" onClick={prevSlide}>
             ❮
           </button>

@@ -1,10 +1,10 @@
 import "./VideoPlayer.css";
 
-const VideoPlayer = ({ char, videoSrc }) => {
+const VideoPlayer = ({ char, mediaSrc }) => {
   return (
     <div className="video-item">
       <div className="char-display">{char}</div>
-      <video src={videoSrc} controls autoPlay loop className="sign-video" />
+      <video src={mediaSrc} controls autoPlay loop className="sign-video" />
     </div>
   );
 };

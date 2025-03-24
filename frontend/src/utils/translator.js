@@ -1,4 +1,4 @@
-import { videoMap } from "../data/videoMap";
+import { mediaMap } from "../data/mediaMap";
 
 export const translateToSignLanguage = (text) => {
   const normalizedText = text.normalize("NFC");
@@ -6,10 +6,10 @@ export const translateToSignLanguage = (text) => {
 
   for (const char of normalizedText) {
     console.log(char);
-    if (videoMap[char]) {
+    if (mediaMap[char]) {
       translations.push({
         char,
-        videoSrc: videoMap[char],
+        mediaSrc: mediaMap[char],
       });
     }
   }
