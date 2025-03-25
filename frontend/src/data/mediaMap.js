@@ -2,9 +2,8 @@ export const mediaMap = {
   അ: "/edited/അ.jpg",
   ആ: "/edited/ആ.jpg",
   ഇ: "/edited/ഇ.jpg",
+  ഈ: "/edited/ഈ.mp4",
   ഉ: "/edited/ഉ.jpg",
-  ള: "/edited/ള.jpg",
-  റ: "/edited/റ.jpg",
 
   ക: "/edited/ക.jpg",
   ഖ: "/edited/ഖ.jpg",
@@ -30,6 +29,7 @@ export const mediaMap = {
   ന: "/edited/ന.jpg",
 
   പ: "/edited/പ.jpg",
+  ഫ: "/edited/ഫ.jpg",
   ബ: "/edited/ബ.jpg",
   ഭ: "/edited/ഭ.jpg",
   മ: "/edited/മ.mp4",
@@ -42,15 +42,16 @@ export const mediaMap = {
   ഷ: "/edited/ഷ.jpg",
   സ: "/edited/സ.jpg",
   ഹ: "/edited/ഹ.jpg",
-
+  ള: "/edited/ള.jpg",
   ഴ: "/edited/ഴ.jpg",
+  റ: "/edited/റ.jpg",
+
   ർ: "/edited/ർ.jpg",
   ൾ: "/edited/ൾ.jpg",
   ഋ: "/edited/ഋ.jpg",
   എ: "/edited/എ.jpg",
   ഒ: "/edited/ഒ.jpg",
 
-  ഈ: "/edited/ഈ.mp4",
   ഏ: "/edited/ഏ.mp4",
   ഔ: "/edited/ഔ.mp4",
   കൈ: "/edited/കൈ.mp4",
@@ -59,7 +60,7 @@ export const mediaMap = {
   "ീ": "/edited/ീ.mp4",
   "ൃ": "/edited/ൃ.mp4",
 
-  " ം": "/edited/ം.jpg",
+  "ം": "/edited/ം.jpg",
   " ഃ": "/edited/ഃ.jpg",
   കെ: "/edited/കെ.jpg",
   കേ: "/edited/കേ.jpg",

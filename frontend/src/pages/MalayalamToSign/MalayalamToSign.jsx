@@ -83,8 +83,6 @@ function MalayalamToSign() {
         alt="Microphone"
       />
 
-      <TestCases onSelect={handleTestSelect} />
-
       <div className="carousels-container">
         {wordTranslations.map((wordTranslation, index) => (
           <Carousel

@@ -183,7 +183,6 @@ const SignToMalayalam = () => {
           cols={100}
           rows={100}
           value={gestureText}
-          readOnly
           placeholder="Detected gestures will appear here..."
         />
       </div>
