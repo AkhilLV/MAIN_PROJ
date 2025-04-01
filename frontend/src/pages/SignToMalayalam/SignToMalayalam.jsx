@@ -15,6 +15,8 @@ const SignToMalayalam = () => {
   const [processedImage, setProcessedImage] = useState("");
   const [isConnected, setIsConnected] = useState(false);
 
+  const previousGestureRef = useRef(""); // Replace previousGesture state with a ref
+
   useEffect(() => {
     // Initialize WebSocket connection
     const newSocket = io("ws://localhost:5000", {
@@ -29,21 +31,15 @@ const SignToMalayalam = () => {
     });
 
     newSocket.on("processed_frame", (data) => {
-      console.log("Received processed frame:", data);
-
       if (data.frame) setProcessedImage(`data:image/jpeg;base64,${data.frame}`);
 
       if (data.gesture) {
-        setGesture(data.gesture);
-
-        setPreviousGesture((prevGesture) => {
-          if (data.gesture !== prevGesture) {
-            setGestureText((prevText) => prevText + " " + data.gesture);
-            return data.gesture;
-          }
-
-          return prevGesture;
-        });
+        // Use ref comparison for instant value access
+        if (data.gesture !== previousGestureRef.current) {
+          setGesture(data.gesture);
+          setGestureText((prevText) => prevText + " " + data.gesture);
+          previousGestureRef.current = data.gesture; // Update ref immediately
+        }
       }
 
       if (data.movement) setMovement(data.movement);
