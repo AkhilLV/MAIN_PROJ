@@ -22,17 +22,10 @@ const Sidebar = () => {
         >
           Sign to Malayalam
         </Link>
-        <Link
-          to="/learn-msl"
-          className={`nav-button ${
-            location.pathname === "/learn-msl" ? "active" : ""
-          }`}
-        >
-          Learn MSL
-        </Link>
       </nav>
     </div>
   );
 };
 
 export default Sidebar;
+

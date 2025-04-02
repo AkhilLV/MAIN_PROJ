@@ -12,7 +12,6 @@ from mediapipe.framework.formats import landmark_pb2
 import copy
 import itertools
 
-# Initialize global timestamp counter
 last_timestamp = 0
 timestamp_counter = 0
 
@@ -21,7 +20,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, 
     cors_allowed_origins="*",
-    async_mode='eventlet',  # Changed to eventlet for better WebSocket support
+    async_mode='eventlet',
     ping_timeout=60000,
     ping_interval=25000,
     logger=True,

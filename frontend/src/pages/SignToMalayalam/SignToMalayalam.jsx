@@ -9,16 +9,13 @@ const SignToMalayalam = () => {
   const canvasRef = useRef(null);
   const [socket, setSocket] = useState(null);
   const [gesture, setGesture] = useState("");
-  const [previousGesture, setPreviousGesture] = useState("");
-  const [gestureText, setGestureText] = useState(""); // Stores text box content
+  const [gestureText, setGestureText] = useState("");
   const [movement, setMovement] = useState("");
   const [processedImage, setProcessedImage] = useState("");
   const [isConnected, setIsConnected] = useState(false);
-
-  const previousGestureRef = useRef(""); // Replace previousGesture state with a ref
+  const previousGestureRef = useRef("");
 
   useEffect(() => {
-    // Initialize WebSocket connection
     const newSocket = io("ws://localhost:5000", {
       transports: ["websocket"],
       reconnectionAttempts: 5,
@@ -32,21 +29,13 @@ const SignToMalayalam = () => {
 
     newSocket.on("processed_frame", (data) => {
       if (data.frame) setProcessedImage(`data:image/jpeg;base64,${data.frame}`);
-
-      if (data.gesture) {
-        // Use ref comparison for instant value access
-        if (data.gesture !== previousGestureRef.current) {
-          setGesture(data.gesture);
-          setGestureText((prevText) => prevText + " " + data.gesture);
-          previousGestureRef.current = data.gesture; // Update ref immediately
-        }
+      if (data.gesture && data.gesture !== previousGestureRef.current) {
+        setGesture(data.gesture);
+        setGestureText((prevText) => prevText + " " + data.gesture);
+        previousGestureRef.current = data.gesture;
+        speakMalayalam(data.gesture); // Speak detected gesture
       }
-
       if (data.movement) setMovement(data.movement);
-    });
-
-    newSocket.on("error", (error) => {
-      console.error("WebSocket error:", error);
     });
 
     newSocket.on("disconnect", () => {
@@ -55,12 +44,14 @@ const SignToMalayalam = () => {
     });
 
     setSocket(newSocket);
-
-    return () => {
-      newSocket.disconnect();
-      stopWebcam();
-    };
+    return () => newSocket.disconnect();
   }, []);
+
+  const speakMalayalam = (text) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "ml-IN";
+    window.speechSynthesis.speak(utterance);
+  };
 
   useEffect(() => {
     const setupWebcam = async () => {
@@ -78,24 +69,10 @@ const SignToMalayalam = () => {
       }
     };
 
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        stopWebcam();
-      } else if (isConnected) {
-        setupWebcam();
-      }
-    };
-
     if (isConnected) {
       setupWebcam();
     }
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      stopWebcam();
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
+    return () => stopWebcam();
   }, [isConnected]);
 
   const startFrameProcessing = () => {
@@ -104,26 +81,18 @@ const SignToMalayalam = () => {
     if (!canvas || !video || !socket) return;
 
     const ctx = canvas.getContext("2d");
-
-    // Limit to 5 FPS (200ms interval)
     const frameInterval = setInterval(() => {
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-
-        // Mirror the image before sending
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        // Reset transform
         ctx.setTransform(1, 0, 0, 1, 0, 0);
-
         const imageData = canvas.toDataURL("image/jpeg").split(",")[1];
         socket.emit("frame", imageData);
       }
     }, TIME_BETWEEN_FRAMES);
-
     return () => clearInterval(frameInterval);
   };
 
@@ -138,7 +107,6 @@ const SignToMalayalam = () => {
       <div className="status">
         Connection Status: {isConnected ? "Connected" : "Disconnected"}
       </div>
-
       <div className="feeds-wrapper">
         <div className="feed-box live-feed">
           <h3>Live Camera Feed</h3>
@@ -147,13 +115,9 @@ const SignToMalayalam = () => {
             playsInline
             muted
             autoPlay
-            style={{
-              borderRadius: "8px",
-              transform: "scaleX(-1)", // Mirror the video
-            }}
+            style={{ borderRadius: "8px", transform: "scaleX(-1)" }}
           />
         </div>
-
         <div className="feed-box">
           <h3>Processed Output</h3>
           <canvas ref={canvasRef} style={{ display: "none" }} />
@@ -172,7 +136,6 @@ const SignToMalayalam = () => {
           )}
         </div>
       </div>
-
       <div className="gesture-text-box">
         <h3>Detected Gestures</h3>
         <textarea
@@ -180,6 +143,7 @@ const SignToMalayalam = () => {
           rows={100}
           value={gestureText}
           placeholder="Detected gestures will appear here..."
+          readOnly
         />
       </div>
     </div>

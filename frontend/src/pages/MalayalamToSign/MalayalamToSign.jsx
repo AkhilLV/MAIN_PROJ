@@ -1,6 +1,5 @@
 import { useState } from "react";
 import Carousel from "../../components/Carousel";
-import TestCases from "../../components/TestCases/TestCases";
 import { translateToSignLanguage } from "../../utils/translator";
 
 import "./MalayalamToSign.css";

@@ -68,4 +68,7 @@ export const mediaMap = {
   "ു": "/edited/ു.jpg",
   "ൂ": "/edited/ൂ.jpg",
   "്": "/edited/്.jpg",
+
+  ൽ: "/edited/ൽ.jpg",
+  ൻ: "/edited/ൻ.jpg",
 };
